@@ -12,6 +12,7 @@ option(NETWORKIT_MONOLITH "Build single library (and tests is requested; require
 option(NETWORKIT_NATIVE "Optimize for native architecture (often better performance)" OFF)
 option(NETWORKIT_WARNINGS "Issue more warnings" OFF)
 option(NETWORKIT_INCLUDESYMLINK "Create symlink to cpp directory" ON)
+option(NETWORKIT_FLATINSTALL "Install into a flat directory structure (useful when building a Python package)" OFF)
 set(NETWORKIT_PYTHON "" CACHE STRING "Directory containing Python.h. Implies MONOLITH=TRUE")
 set(NETWORKIT_PYTHON_SOABI "" CACHE STRING "Platform specific file extension. Implies MONOLITH=TRUE")
 
@@ -84,9 +85,14 @@ if (NETWORKIT_MONOLITH)
 			CXX_STANDARD ${NETWORKIT_CXX_STANDARD}
 			COMPILE_FLAGS "${NETWORKIT_CXX_FLAGS}"
 			LINK_FLAGS "${NETWORKIT_LINK_FLAGS}")
-	install(TARGETS networkit
-			LIBRARY DESTINATION .)
-	if (NETWORKIT_PYTHON)
+
+	if(NETWORKIT_FLATINSTALL)
+		install(TARGETS networkit LIBRARY DESTINATION .)
+	else()
+		install(TARGETS networkit LIBRARY DESTINATION lib)
+	endif()
+
+	if(NETWORKIT_PYTHON)
 		if(EXISTS "${PROJECT_SOURCE_DIR}/networkit/_NetworKit.cpp")
 			add_library(_NetworKit MODULE networkit/_NetworKit.cpp)
 			target_link_libraries(_NetworKit PRIVATE networkit)
@@ -105,8 +111,12 @@ if (NETWORKIT_MONOLITH)
 				set_target_properties(_NetworKit PROPERTIES
 						INSTALL_RPATH "$ORIGIN")
 			endif()
-			install(TARGETS _NetworKit
-					LIBRARY DESTINATION .)
+
+			if(NETWORKIT_FLATINSTALL)
+				install(TARGETS _NetworKit LIBRARY DESTINATION .)
+			else()
+				install(TARGETS _NetworKit LIBRARY DESTINATION lib)
+			endif()
 		else()
 			message(FATAL_ERROR "networkit/_NetworKit.cpp is missing. Invoke Cython manually.")
 		endif()
